@@ -1,6 +1,10 @@
 package com.experiment.aws.awsservicetester.controller;
 
 import com.experiment.aws.awsservicetester.service.S3Service;
+
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -57,5 +61,16 @@ public class S3Controller {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Upload failed: " + e.getMessage());
         }  
+    }
+    
+    @GetMapping("/list")
+    public ResponseEntity<List<Map<String, Object>>> listObjectsWithMetadata(
+            @RequestParam String bucket) {
+        try {
+            List<Map<String, Object>> result = s3Service.listAllObjectsWithMetadata(bucket);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }
