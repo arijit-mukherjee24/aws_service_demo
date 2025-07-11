@@ -57,6 +57,73 @@ curl -X POST "http://localhost:8080/api/s3/upload?bucket=my-bucket&key=folder/ne
 
 ---
 
+### 4. Start OCR processing on a document using Textract
+
+**POST** `/api/ocr/start`
+
+**Query Parameters:**
+- `bucket` (required): your S3 bucket name
+- `key` (required): the S3 object key of the document to process
+
+**Example (using curl):**
+```sh
+curl -X POST "http://localhost:8080/api/ocr/start?bucket=my-bucket&key=folder/document.pdf"
+```
+
+---
+
+### 5. Get OCR results
+
+**GET** `/api/ocr/results/{jobId}`
+
+**Path Variables:**
+- `jobId` (required): he job ID returned from the start OCR endpoint
+
+**Query Parameters:**
+- `pages` (optional): List of page numbers to retrieve. If not provided, all pages will be returned.
+
+**Example: (all pages)**
+```sh
+curl -X GET "http://localhost:8080/api/ocr/results/1234567890abcdef"
+```
+
+**Example: (specific pages)**
+```sh
+curl -X GET "http://localhost:8080/api/ocr/results/1234567890abcdef?pages=1&pages=3"
+```
+
+**Response: (when processing)**
+{
+  "status": "IN_PROGRESS",
+  "results": null
+}
+
+**Response: (when complete)**
+{
+  "status": "SUCCEEDED",
+  "results": [
+    {
+      "page": 1,
+      "text": "This is the full text from page 1\nMultiple lines...",
+      "lines": [
+        {
+          "id": "line-1",
+          "text": "This is the full text from page 1",
+          "confidence": 99.5
+        },
+        {
+          "id": "line-2",
+          "text": "Multiple lines...",
+          "confidence": 98.7
+        }
+      ]
+    }
+  ]
+}
+
+---
+
+
 ## **AWS Credentials**
 
 - Ensure your AWS credentials are in `~/.aws/credentials` (Linux/Mac) or `C:\Users\<username>\.aws\credentials` (Windows).
