@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.textract.TextractClient;
@@ -32,5 +33,13 @@ public class AwsConfig {
         return TextractClient.builder()
                 .region(Region.US_EAST_1) // Change to your region
                 .build();
-    }	
+    }
+    
+    @Bean
+    public BedrockRuntimeClient bedrockRuntimeClient() {
+        return BedrockRuntimeClient.builder()
+            .region(Region.US_EAST_1)
+            .credentialsProvider(DefaultCredentialsProvider.create())
+            .build();
+    }
 }

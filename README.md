@@ -1,6 +1,6 @@
 # AWS Service Tester
 
-A Spring Boot REST API for working with AWS S3: download files, generate presigned URLs, and upload files.
+A Spring Boot REST API for working with AWS services.
 
 ---
 
@@ -77,7 +77,7 @@ curl -X POST "http://localhost:8080/api/ocr/start?bucket=my-bucket&key=folder/do
 **GET** `/api/ocr/results/{jobId}`
 
 **Path Variables:**
-- `jobId` (required): he job ID returned from the start OCR endpoint
+- `jobId` (required): the job ID returned from the start OCR endpoint
 
 **Query Parameters:**
 - `pages` (optional): List of page numbers to retrieve. If not provided, all pages will be returned.
@@ -93,12 +93,15 @@ curl -X GET "http://localhost:8080/api/ocr/results/1234567890abcdef?pages=1&page
 ```
 
 **Response: (when processing)**
+```json
 {
   "status": "IN_PROGRESS",
   "results": null
 }
+```
 
 **Response: (when complete)**
+```json
 {
   "status": "SUCCEEDED",
   "results": [
@@ -120,9 +123,39 @@ curl -X GET "http://localhost:8080/api/ocr/results/1234567890abcdef?pages=1&page
     }
   ]
 }
+```
 
 ---
 
+### 6. Interact with AWS Bedrock Model
+
+**POST** `/api/bedrock/playground`
+
+**Form Data:**
+- `prompt` (required): The prompt to send to the model (use `x-www-form-urlencoded`)
+
+**Sample Response:**
+
+```json
+{
+  "id": "msg_0123456789abcdef",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "Why do Java programmers wear glasses? Because they can't C#!"
+    }
+  ],
+  "model": "claude-3-sonnet-20240229-v1:0",
+  "stop_reason": "max_tokens",
+  "usage": {
+    "input_tokens": 15,
+    "output_tokens": 23
+  }
+}
+```
+---
 
 ## **AWS Credentials**
 
@@ -155,7 +188,7 @@ curl -X GET "http://localhost:8080/api/ocr/results/1234567890abcdef?pages=1&page
 
 ## **Notes**
 
-- Make sure your IAM user has the required S3 permissions (`s3:GetObject`, `s3:PutObject`).
+- Make sure your IAM user has the required S3 and Bedrock permissions (`s3:GetObject`, `s3:PutObject`, `bedrock:InvokeModel`).
 - The API returns HTTP 404 if the file is not found, and 400 for upload errors.
 
 ---
