@@ -134,26 +134,22 @@ curl -X GET "http://localhost:8080/api/ocr/results/1234567890abcdef?pages=1&page
 **Form Data:**
 - `prompt` (required): The prompt to send to the model (use `x-www-form-urlencoded`)
 
-**Sample Response:**
+**Example (using curl):**
+```sh
+curl -X POST http://localhost:8080/api/bedrock/playground -d "prompt=Tell me a joke about software developers"
+```
+---
 
-```json
-{
-  "id": "msg_0123456789abcdef",
-  "type": "message",
-  "role": "assistant",
-  "content": [
-    {
-      "type": "text",
-      "text": "Why do Java programmers wear glasses? Because they can't C#!"
-    }
-  ],
-  "model": "claude-3-sonnet-20240229-v1:0",
-  "stop_reason": "max_tokens",
-  "usage": {
-    "input_tokens": 15,
-    "output_tokens": 23
-  }
-}
+### 7. Analyze text sentiment
+
+**POST** `/api/bedrock/sentiment`
+
+**Form Data:**
+- `text` (required): The text to analyze (use `x-www-form-urlencoded`)
+
+**Example (using curl):**
+```sh
+curl -X POST http://localhost:8080/api/bedrock/sentiment -d "text=This is amazing!"
 ```
 ---
 

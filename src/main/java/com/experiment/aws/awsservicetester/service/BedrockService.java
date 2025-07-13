@@ -1,5 +1,7 @@
 package com.experiment.aws.awsservicetester.service;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
 import software.amazon.awssdk.core.SdkBytes;
@@ -17,6 +19,33 @@ public class BedrockService {
     public BedrockService(BedrockRuntimeClient bedrockRuntimeClient) {
         this.bedrockRuntimeClient = bedrockRuntimeClient;
     } 
+
+    public String getModelResponse(String prompt) {
+        String modelResponse = invokeBedrockModel(prompt);
+        String contentText = extractContentText(modelResponse);
+        return contentText != null ? contentText : "No content found";
+    }
+
+    public String analyzeSentiment(String text) {
+        String prompt = "Analyze the sentiment of this text and reply with only one word: positive, negative, or neutral.\nText: " + text;
+        String modelResponse = invokeBedrockModel(prompt);
+        String contentText = extractContentText(modelResponse);
+        return contentText != null ? contentText : "unknown";
+    }
+    
+    private String extractContentText(String modelResponse) {
+        try {
+            JSONObject obj = new JSONObject(modelResponse);
+            JSONArray contentArr = obj.getJSONArray("content");
+            if (contentArr.length() > 0) {
+                return contentArr.getJSONObject(0).getString("text").trim();
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        return null;
+    }
+    
     /*
      * This method sends a prompt to the Anthropic Claude 3 Sonnet model hosted on AWS Bedrock, 
      * and returns the model's AI-generated response as a String.
@@ -52,7 +81,7 @@ public class BedrockService {
      *    - Convert the response body to a UTF-8 String (so it's human-readable).
      *    - Return this String, which contains the model's answer.
      */
-    public String invokeBedrockModel(String prompt) {
+    private String invokeBedrockModel(String prompt) {
         // Claude 3 expects the prompt wrapped in a structured JSON format
         // For chat models, the structure is typically: {"messages":[{"role":"user","content":"..."}]}
     	String requestBody = """
@@ -66,7 +95,7 @@ public class BedrockService {
     			    }
     			  ]
     			}
-    			""".formatted(prompt.replace("\"", "\\\""));
+    			""".formatted(prompt.replace("\n", "\\n").replace("\"", "\\\""));
 
         InvokeModelRequest request = InvokeModelRequest.builder()
                 .modelId(CLAUDE_SONNET_MODEL_ID)
