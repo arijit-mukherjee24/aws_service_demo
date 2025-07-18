@@ -153,6 +153,21 @@ curl -X POST http://localhost:8080/api/bedrock/sentiment -d "text=This is amazin
 ```
 ---
 
+### 8. Content File Metadata Info (Supports pdf, png, jpg, jpeg, tif)
+
+**POST** `/api/metadata/files/upload`
+
+**Form Data:**
+- `file` (required): the file to upload (use multipart/form-data)
+
+**Example (using curl):**
+```sh
+curl -X POST "http://localhost:8080/api/metadata/files/upload" \
+  -F "file=@/path/to/local/file.pdf"
+```
+
+---
+
 ## **AWS Credentials**
 
 - Ensure your AWS credentials are in `~/.aws/credentials` (Linux/Mac) or `C:\Users\<username>\.aws\credentials` (Windows).
