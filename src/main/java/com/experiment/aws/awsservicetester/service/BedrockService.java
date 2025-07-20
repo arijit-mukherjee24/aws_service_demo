@@ -14,7 +14,7 @@ import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
 public class BedrockService {
 	
 	private final BedrockRuntimeClient bedrockRuntimeClient;
-    private static final String CLAUDE_SONNET_MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0";
+    private static final String CLAUDE_SONNET_MODEL_ID = "us.anthropic.claude-3-7-sonnet-20250219-v1:0";
     
     public BedrockService(BedrockRuntimeClient bedrockRuntimeClient) {
         this.bedrockRuntimeClient = bedrockRuntimeClient;

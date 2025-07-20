@@ -165,6 +165,35 @@ curl -X POST http://localhost:8080/api/bedrock/sentiment -d "text=This is amazin
 curl -X POST "http://localhost:8080/api/metadata/files/upload" \
   -F "file=@/path/to/local/file.pdf"
 ```
+---
+
+### 9. Start a field extraction job on a document (OCR + LLM field extraction)
+
+**POST** `/api/extraction/start`
+
+**Query Parameters:**
+- `bucket` (required): your S3 bucket name
+- `key` (required): the S3 object key of the document to process
+- `fields` (required): comma-separated list of fields to extract (e.g., `name,date_of_birth,address`)
+
+**Example (using curl):**
+```sh
+curl -X POST "http://localhost:8080/api/extraction/start?bucket=my-bucket&key=folder/document.pdf&fields=name,date_of_birth,invoice_number"
+```
+
+---
+
+### 10. Get extraction job result
+
+**GET** `/api/extraction/results`
+
+**Query Parameters:**
+- `jobId` (required): the job ID returned from the start extraction endpoint
+
+**Example:**
+```sh
+curl -X GET "http://localhost:8080/api/extraction/results?jobId=9b69b3ca-9c3e-4c85-ae26-2e8b2f5eb1a2"
+```
 
 ---
 
