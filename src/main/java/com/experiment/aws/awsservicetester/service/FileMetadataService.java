@@ -9,8 +9,11 @@ import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.formats.tiff.TiffField;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
+import org.apache.pdfbox.cos.COSDictionary;
+import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -90,6 +93,51 @@ public class FileMetadataService {
                 meta.put("size", fileSize / pageCount); // Approximate size per page
                 meta.put("dpi", 72); // Default PDF resolution
                 
+             // Method 1: Direct rotation property
+                int primaryRotation = page.getRotation();
+                
+                // Method 2: Calculate rotation from page's transformation matrix
+                int calculatedRotation = 0;
+                try {
+                    // Some PDFs encode rotation in the CTM (Current Transformation Matrix)
+                    PDPageContentStream contentStream = new PDPageContentStream(document, page, 
+                            PDPageContentStream.AppendMode.APPEND, true, true);
+                    contentStream.close();
+                    
+                    // Get the page dictionary
+                    COSDictionary pageDict = page.getCOSObject();
+                    
+                    // Check if there are additional rotation hints in the dictionary
+                    if (pageDict.containsKey(COSName.ROTATE)) {
+                        int dictRotation = pageDict.getInt(COSName.ROTATE);
+                        log.debug("Found rotation hint in page dictionary: {}", dictRotation);
+                        calculatedRotation = dictRotation;
+                    }
+                } catch (Exception e) {
+                    log.debug("Could not determine rotation from transformation matrix: {}", e.getMessage());
+                }
+                
+                // Choose the most reliable rotation value
+                int rotation = primaryRotation;
+                if (rotation == 0 && calculatedRotation != 0) {
+                    rotation = calculatedRotation;
+                }
+                
+                // Normalize to 0, 90, 180, 270
+                rotation = ((rotation % 360) + 360) % 360;
+                
+                // Only allow standard rotations
+                if (rotation != 0 && rotation != 90 && rotation != 180 && rotation != 270) {
+                    // Round to nearest 90 degrees
+                    rotation = Math.round(rotation / 90.0f) * 90;
+                    if (rotation == 360) rotation = 0;
+                }
+                
+                log.debug("Page {} rotation - Direct: {}, Calculated: {}, Final: {}", 
+                          (i+1), primaryRotation, calculatedRotation, rotation);
+                
+                meta.put("rotation", rotation);
+                
                 pageMetadata.put(i + 1, meta);
             }
         }
@@ -161,6 +209,46 @@ public class FileMetadataService {
                 // Add page number
                 meta.put("pageNumber", i + 1);
                 meta.put("totalPages", pageCount);
+                
+				// Add rotation detection
+				int rotation = 0; // Default to 0 degrees
+				boolean flipHorizontal = false;
+				boolean flipVertical = false;
+				if (tiffMetadata != null) {
+					try {
+						// Try to get orientation from TIFF metadata
+						TiffField orientationField = tiffMetadata.findField(TiffTagConstants.TIFF_TAG_ORIENTATION);
+						if (orientationField != null) {
+							int orientation = orientationField.getIntValue();
+							// Convert TIFF orientation to degrees
+							// 1 = 0°, 3 = 180°, 6 = 90° CW, 8 = 270° CW
+							switch (orientation) {
+							case 1:
+							case 2:
+								rotation = 0;
+								break;
+							case 3:
+							case 4:
+								rotation = 180;
+								break;
+							case 5:
+							case 6:
+								rotation = 90;
+								break;
+							case 7:
+							case 8:
+								rotation = 270;
+								break;
+							default:
+								rotation = 0;
+								break;
+							}
+						}
+					} catch (Exception e) {
+						log.debug("Could not extract orientation information", e);
+					}
+				}
+				meta.put("rotation", rotation);
                 
                 // If we have TIFF metadata, try to extract compression info
                 if (tiffMetadata != null) {
@@ -236,6 +324,33 @@ public class FileMetadataService {
             meta.put("bitsPerPixel", info.getBitsPerPixel());
             meta.put("dpi", info.getPhysicalWidthDpi() > 0 ? info.getPhysicalWidthDpi() : 96);
             meta.put("colorType", info.getColorType().name());
+            
+            // Add rotation detection
+            int rotation = 0; // Default to 0 degrees
+            try {
+                ImageMetadata metadata = Imaging.getMetadata(fileBytes);
+                // For JPEG images with EXIF data
+                if (metadata instanceof org.apache.commons.imaging.formats.jpeg.JpegImageMetadata) {
+                    org.apache.commons.imaging.formats.jpeg.JpegImageMetadata jpegMetadata = 
+                        (org.apache.commons.imaging.formats.jpeg.JpegImageMetadata) metadata;
+                    
+                    TiffField orientationField = jpegMetadata.findEXIFValue(TiffTagConstants.TIFF_TAG_ORIENTATION);
+                    if (orientationField != null) {
+                        int orientation = orientationField.getIntValue();
+                        // Convert EXIF orientation to degrees (same as TIFF)
+                        switch (orientation) {
+                            case 1: rotation = 0; break;
+                            case 3: rotation = 180; break;
+                            case 6: rotation = 90; break;
+                            case 8: rotation = 270; break;
+                            default: rotation = 0; break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("No rotation metadata available", e);
+            }
+            meta.put("rotation", rotation);
             
             // Check for embedded metadata
             try {
